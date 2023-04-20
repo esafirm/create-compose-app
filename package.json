@@ -3,19 +3,18 @@
   "version": "0.1.0",
   "private": false,
   "dependencies": {
-    "inquirer": "^9.1.5"
+    "inquirer": "^8.0.0"
   },
   "scripts": {
     "start": "ts-node ./create-script/index.ts",
     "dev": "DEV_MODE=true ts-node ./create-script/index.ts",
-    "build-sample": "ts-node --skip-project create-script/index.ts sample/gr-config.json",
     "build-bin": "tsc --build tsconfig.json && chmod +x build/bin/index.js"
   },
   "bin": {
     "create-guard-report": "./build/bin/index.js"
   },
   "devDependencies": {
-    "@types/inquirer": "^9.0.3",
+    "@types/inquirer": "^8.0.0",
     "@types/node": "^18.15.12",
     "js-yaml": "^4.1.0"
   }
