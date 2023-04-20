@@ -120,8 +120,8 @@ function prepareTemplate(
  * @param callback action to execute on each file
  */
 async function walk(passedPath: string, callback: (file: string) => void) {
-  const fs = await import('fs').then((m) => m.default);
-  const path = await import('path').then((m) => m.default);
+  const fs = await import('fs');
+  const path = await import('path');
   if (fs.statSync(passedPath).isFile()) {
     callback(passedPath);
     return;
@@ -151,7 +151,7 @@ async function replaceContents(targetDir: string, config: Config) {
     'settings.gradle.kts',
   ];
 
-  const fs = await import('fs').then((m) => m.default);
+  const fs = await import('fs');
 
   for (const path of pathToEdit) {
     const realPath = `${targetDir}${path}`;

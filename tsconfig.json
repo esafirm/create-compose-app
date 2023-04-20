@@ -2,9 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
+      "ES2021.String"
     ],
     "allowJs": true,
     "skipLibCheck": true,
@@ -22,5 +20,7 @@
   },
   "include": [
     "create-script/*.ts",
-  ]
+  ],
+  "skipLibCheck": true,
+  "outDir": "build/bin"
 }

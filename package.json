@@ -9,7 +9,7 @@
     "start": "ts-node ./create-script/index.ts",
     "dev": "DEV_MODE=true ts-node ./create-script/index.ts",
     "build-sample": "ts-node --skip-project create-script/index.ts sample/gr-config.json",
-    "build-bin": "tsc ./create-script/index.ts --skipLibCheck --outfile build/bin/index.js && chmod +x build/bin/index.js"
+    "build-bin": "tsc --build tsconfig.json && chmod +x build/bin/index.js"
   },
   "bin": {
     "create-guard-report": "./build/bin/index.js"
