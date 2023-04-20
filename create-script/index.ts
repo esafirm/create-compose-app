@@ -23,6 +23,9 @@ interface Config {
   teamId: string;
 }
 
+const REPO_NAME = 'create-compose-app';
+const BRANCH = process.argv[3] || 'main';
+
 /**
  * Entry point for the script
  */
@@ -55,18 +58,16 @@ async function main() {
     },
   ]);
 
-  const branch = process.argv[3] || 'main';
-
   const config = answers as Config;
 
-  const zipFile = `https://github.com/esafirm/create-compose-app/archive/refs/heads/${branch}.zip`;
+  const zipFile = `https://github.com/esafirm/${REPO_NAME}/archive/refs/heads/${BRANCH}.zip`;
   const targetFile = '/tmp/template.zip';
   const targetDir = '/tmp/cca/';
 
   // Printing info
   console.log('Using config', config);
 
-  prepareTemplate(targetFile, targetDir, branch, zipFile);
+  prepareTemplate(targetFile, targetDir, BRANCH, zipFile);
   changeDirectory(targetDir, config);
   await replaceContents(targetDir, config);
   moveToTarget(targetDir, config);
@@ -106,9 +107,12 @@ function prepareTemplate(
 
   // Extract the zip and delete
   console.log('Extract the zip…');
+  run('rm -rf /tmp/temp-cca');
+  run(`mkdir -p ${targetDir} && unzip ${targetFile} -d /tmp/temp-cca`);
   run(
-    `mkdir -p ${targetDir} && unzip ${targetFile} "template/*" -d ${targetDir}`
+    `mv /tmp/temp-cca/${REPO_NAME}-${BRANCH}/template/* ${targetDir} && rm -rf /tmp/temp-cca`
   );
+
   run(`rm -rf ${targetFile}`);
 }
 
