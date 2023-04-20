@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 //@ts-ignore
-const fs = require('fs');
 const { execSync } = require('child_process');
 
 if (process.argv[2] === '--help') {
@@ -16,13 +15,16 @@ if (process.argv[2] === '--help') {
   process.exit(0);
 }
 
-async function main() {
-  interface Config {
-    packageName: string;
-    appName: string;
-    teamId: string;
-  }
+interface Config {
+  packageName: string;
+  appName: string;
+  teamId: string;
+}
 
+/**
+ * Entry point for the script
+ */
+async function main() {
   const inquirer = await import('inquirer').then((m) => m.default);
   const answers = await inquirer.prompt([
     {
@@ -92,4 +94,48 @@ async function main() {
   console.log(`Process done! Output file is in ${outputFile}`);
 }
 
+/**
+ * Walk through a directory and execute a callback on each file
+ *
+ * @param dir directory to walk
+ * @param callback action to execute on each file
+ */
+async function walk(dir: string, callback: (file: string) => void) {
+  const fs = await import('fs').then((m) => m.default);
+  const path = await import('path').then((m) => m.default);
+
+  fs.readdirSync(dir).forEach((file) => {
+    const filepath = path.join(dir, file);
+    callback(filepath);
+  });
+}
+
+/**
+ * Replace the contents of the template with the passed configuration
+ *
+ * @param config configuration to apply to the template
+ */
+async function replaceContents(config: Config) {
+  const directoryToEdit = [
+    'androidApp',
+    'shared',
+    'iosApp/Configuration/Config.xcconfig',
+    'settings.gradle.kts',
+  ];
+
+  const fs = await import('fs').then((m) => m.default);
+
+  directoryToEdit.forEach((dir) => {
+    walk(dir, (file) => {
+      let content = fs.readFileSync(file, 'utf8');
+      content = content.replaceAll('{{PACKAGE_NAME}}', config.packageName);
+      content = content.replaceAll('{{APP_NAME}}', config.appName);
+      content = content.replaceAll('{{TEAM_ID}}', config.teamId);
+
+      fs.writeFileSync(file, content, 'utf8');
+    });
+  });
+}
+
+// Run the script
 main();
