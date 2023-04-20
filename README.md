@@ -1,11 +1,11 @@
-## Create Compose App
+## Create Compose Multiplatform App
 
 A compose multiplatform app starter generator with simple configuration
 
 ### Usage
 
 ```bash
-npx create-compose-app
+npx create-cmp-app
 ```
 
 ### License
