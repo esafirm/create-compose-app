@@ -15,6 +15,8 @@ if (process.argv[2] === '--help') {
   process.exit(0);
 }
 
+const devMode = process.env.DEV_MODE === 'true';
+
 interface Config {
   packageName: string;
   appName: string;
@@ -60,21 +62,26 @@ async function main() {
   // Printing info
   console.log(`Using ${appPackage} as app package`);
 
-  // Prepare env
-  execSync(`rm -rf ${targetFile} ${targetDir}`, options);
+  await prepareTemplate(targetFile, targetDir, branch, zipFile, options);
 
-  // Download the zip
-  console.log(`Downloading the template for branch ${branch}…`);
-  execSync(`curl -L ${zipFile} --output ${targetFile}`, options);
-
-  // Extract the zip and delete
-  console.log('Extract the zip…');
-  execSync(
-    `mkdir -p ${targetDir} && unzip ${targetFile} "template/*" -d ${targetDir}`,
+  const outputFile = await configureTemplate(
+    openCommand,
+    appPackage,
+    realTargetDir,
+    targetDir,
     options
   );
-  execSync(`rm -rf ${targetFile}`, options);
 
+  console.log(`Process done! Output file is in ${outputFile}`);
+}
+
+async function configureTemplate(
+  openCommand: string,
+  appPackage: string,
+  realTargetDir: string,
+  targetDir: string,
+  options: any
+): Promise<string> {
   // Setup the package name
   console.log('Preparing report…');
   execSync(`${openCommand} && echo REACT_APP_PACKAGE=${appPackage} > .env`);
@@ -91,7 +98,36 @@ async function main() {
   console.log('Clean up…');
   execSync(`rm -rf ${targetDir}`);
 
-  console.log(`Process done! Output file is in ${outputFile}`);
+  return outputFile;
+}
+
+async function prepareTemplate(
+  targetFile: string,
+  targetDir: string,
+  branch: string,
+  zipFile: string,
+  options: any
+) {
+  // Remove existing target
+  execSync(`rm -rf ${targetFile} ${targetDir}`, options);
+
+  // In dev mode we will use the local template
+  if (devMode) {
+    execSync(`mkdir -p ${targetDir} && cp -r ../template ${targetDir}`);
+    return;
+  }
+
+  // Download the zip
+  console.log(`Downloading the template for branch ${branch}…`);
+  execSync(`curl -L ${zipFile} --output ${targetFile}`, options);
+
+  // Extract the zip and delete
+  console.log('Extract the zip…');
+  execSync(
+    `mkdir -p ${targetDir} && unzip ${targetFile} "template/*" -d ${targetDir}`,
+    options
+  );
+  execSync(`rm -rf ${targetFile}`, options);
 }
 
 /**
