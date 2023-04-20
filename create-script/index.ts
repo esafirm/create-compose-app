@@ -59,44 +59,44 @@ async function main() {
 
   const config = answers as Config;
 
-  console.log('Config:', config);
-
-  const appPackage = config.packageName;
-
   const zipFile = `https://github.com/esafirm/create-compose-app/archive/refs/heads/${branch}.zip`;
   const targetFile = '/tmp/template.zip';
   const targetDir = '/tmp/cca/';
-  const realTargetDir = `${targetDir}create-compose-app-${branch}`;
 
   // Printing info
-  console.log(`Using ${appPackage} as app package`);
+  console.log('Using config', config);
 
-  await prepareTemplate(targetFile, targetDir, branch, zipFile);
-  await configureTemplate(config, targetDir);
-
-  console.log(`Process done!`);
+  prepareTemplate(targetFile, targetDir, branch, zipFile);
+  changeDirectory(targetDir, config);
+  await replaceContents(targetDir, config);
+  moveToTarget(targetDir, config);
 }
 
-async function configureTemplate(config: Config, targetDir: string) {
-  replaceContents(config);
+async function moveToTarget(targetDir: string, config: Config) {
+  console.log('Moving to target…');
 
-  // Cleanup
-  console.log('Clean up…');
-  run(`rm -rf ${targetDir}`);
+  const directoryFromAppName = config.appName.replace(/\s/g, '-').toLowerCase();
+  run(`mv ${targetDir} ${process.cwd()}/${directoryFromAppName}`);
+
+  console.log(`Process done! Project available in ${directoryFromAppName}`);
 }
 
-async function prepareTemplate(
+function prepareTemplate(
   targetFile: string,
   targetDir: string,
   branch: string,
   zipFile: string
 ) {
+  console.log('Prepare template…');
+
   // Remove existing target
   run(`rm -rf ${targetFile} ${targetDir}`);
 
   // In dev mode we will use the local template
   if (devMode) {
-    run(`mkdir -p ${targetDir} && cp -r ${__dirname}/../template ${targetDir}`);
+    run(
+      `mkdir -p ${targetDir} && cp -r ${__dirname}/../template/. ${targetDir}`
+    );
     return;
   }
 
@@ -114,18 +114,27 @@ async function prepareTemplate(
 
 /**
  * Walk through a directory and execute a callback on each file
+ * If the path is a file it will execute the callback directly
  *
- * @param dir directory to walk
+ * @param passedPath path to walk
  * @param callback action to execute on each file
  */
-async function walk(dir: string, callback: (file: string) => void) {
+async function walk(passedPath: string, callback: (file: string) => void) {
   const fs = await import('fs').then((m) => m.default);
   const path = await import('path').then((m) => m.default);
+  if (fs.statSync(passedPath).isFile()) {
+    callback(passedPath);
+    return;
+  }
 
-  fs.readdirSync(dir).forEach((file) => {
-    const filepath = path.join(dir, file);
-    callback(filepath);
-  });
+  for (const file of fs.readdirSync(passedPath)) {
+    const filepath = path.join(passedPath, file);
+    if (fs.statSync(filepath).isDirectory()) {
+      await walk(filepath, callback);
+    } else {
+      callback(filepath);
+    }
+  }
 }
 
 /**
@@ -133,25 +142,56 @@ async function walk(dir: string, callback: (file: string) => void) {
  *
  * @param config configuration to apply to the template
  */
-async function replaceContents(config: Config) {
-  const directoryToEdit = [
+async function replaceContents(targetDir: string, config: Config) {
+  const pathToEdit = [
     'androidApp',
     'shared',
+    'desktopApp',
     'iosApp/Configuration/Config.xcconfig',
     'settings.gradle.kts',
   ];
 
   const fs = await import('fs').then((m) => m.default);
 
-  directoryToEdit.forEach((dir) => {
-    walk(dir, (file) => {
-      let content = fs.readFileSync(file, 'utf8');
-      content = content.replaceAll('{{PACKAGE_NAME}}', config.packageName);
-      content = content.replaceAll('{{APP_NAME}}', config.appName);
-      content = content.replaceAll('{{TEAM_ID}}', config.teamId);
+  for (const path of pathToEdit) {
+    const realPath = `${targetDir}${path}`;
 
-      fs.writeFileSync(file, content, 'utf8');
+    await walk(realPath, (file) => {
+      console.log(`Replacing contents in ${file}…`);
+
+      const stat = fs.statSync(file);
+      if (stat.isFile()) {
+        let content = fs.readFileSync(file, 'utf8');
+        content = content.replaceAll('{{PACKAGE_NAME}}', config.packageName);
+        content = content.replaceAll('{{APP_NAME}}', config.appName);
+        content = content.replaceAll('{{TEAM_ID}}', config.teamId);
+
+        fs.writeFileSync(file, content, 'utf8');
+      }
     });
+  }
+}
+
+function changeDirectory(targetDir: string, config: Config) {
+  const dirToChange = [
+    {
+      parent: 'androidApp/src/androidMain/kotlin',
+      child: '/com/myapplication',
+    },
+  ];
+
+  const dirFromPackage = config.packageName.replace(/\./g, '/');
+
+  dirToChange.forEach((dir) => {
+    console.log(`Moving ${dir.child} to ${dirFromPackage}…`);
+
+    const parent = `${targetDir}${dir.parent}`;
+    const source = `${parent}${dir.child}`;
+    const target = `${parent}/${dirFromPackage}`;
+
+    run(`mkdir -p ${target}`);
+    run(`cp -r ${source}/. ${target}`);
+    run(`rm -rf ${source}`);
   });
 }
 
