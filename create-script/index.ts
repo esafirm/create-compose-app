@@ -68,80 +68,48 @@ async function main() {
   const targetDir = '/tmp/cca/';
   const realTargetDir = `${targetDir}create-compose-app-${branch}`;
 
-  const options = { stdio: 'ignore' };
-  const openCommand = `cd ${realTargetDir}`;
-
   // Printing info
   console.log(`Using ${appPackage} as app package`);
 
-  await prepareTemplate(targetFile, targetDir, branch, zipFile, options);
+  await prepareTemplate(targetFile, targetDir, branch, zipFile);
+  await configureTemplate(config, targetDir);
 
-  const outputFile = await configureTemplate(
-    openCommand,
-    appPackage,
-    realTargetDir,
-    targetDir,
-    options
-  );
-
-  console.log(`Process done! Output file is in ${outputFile}`);
+  console.log(`Process done!`);
 }
 
-async function configureTemplate(
-  openCommand: string,
-  appPackage: string,
-  realTargetDir: string,
-  targetDir: string,
-  options: any
-): Promise<string> {
-  // Setup the package name
-  console.log('Preparing report…');
-  execSync(`${openCommand} && echo REACT_APP_PACKAGE=${appPackage} > .env`);
-
-  // Creating the report
-  console.log('Creating the report…');
-  const outputFile = `${process.cwd()}/Guard\\ Report.html`;
-  const env = `APP_PACKAGE=${appPackage}`;
-
-  execSync(`${openCommand} && ${env} npm run create-report`, options);
-  execSync(`mv ${realTargetDir}/build/index.html ${outputFile}`);
+async function configureTemplate(config: Config, targetDir: string) {
+  replaceContents(config);
 
   // Cleanup
   console.log('Clean up…');
-  execSync(`rm -rf ${targetDir}`);
-
-  return outputFile;
+  run(`rm -rf ${targetDir}`);
 }
 
 async function prepareTemplate(
   targetFile: string,
   targetDir: string,
   branch: string,
-  zipFile: string,
-  options: any
+  zipFile: string
 ) {
   // Remove existing target
-  execSync(`rm -rf ${targetFile} ${targetDir}`, options);
+  run(`rm -rf ${targetFile} ${targetDir}`);
 
   // In dev mode we will use the local template
   if (devMode) {
-    execSync(
-      `mkdir -p ${targetDir} && cp -r ${__dirname}/../template ${targetDir}`
-    );
+    run(`mkdir -p ${targetDir} && cp -r ${__dirname}/../template ${targetDir}`);
     return;
   }
 
   // Download the zip
   console.log(`Downloading the template for branch ${branch}…`);
-  execSync(`curl -L ${zipFile} --output ${targetFile}`, options);
+  run(`curl -L ${zipFile} --output ${targetFile}`);
 
   // Extract the zip and delete
   console.log('Extract the zip…');
-  execSync(
-    `mkdir -p ${targetDir} && unzip ${targetFile} "template/*" -d ${targetDir}`,
-    options
+  run(
+    `mkdir -p ${targetDir} && unzip ${targetFile} "template/*" -d ${targetDir}`
   );
-  execSync(`rm -rf ${targetFile}`, options);
+  run(`rm -rf ${targetFile}`);
 }
 
 /**
@@ -185,6 +153,16 @@ async function replaceContents(config: Config) {
       fs.writeFileSync(file, content, 'utf8');
     });
   });
+}
+
+/**
+ * Convenience function to run a command
+ *
+ * @param command command to run
+ */
+function run(command: string) {
+  const options = { stdio: 'ignore' };
+  execSync(command, options);
 }
 
 // Run the script
