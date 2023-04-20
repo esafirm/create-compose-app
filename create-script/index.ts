@@ -32,6 +32,18 @@ async function main() {
     {
       name: 'packageName',
       message: 'Package name:',
+      filter: (input: string) => {
+        return input.trim();
+      },
+      validate: (input: string) => {
+        const regex = /^[a-zA-Z0-9.]+$/;
+        const isValid = regex.test(input);
+
+        if (!isValid) {
+          return 'Package name should only contains alphanumeric and dot (ex: com.example.app)';
+        }
+        return true;
+      },
     },
     {
       name: 'appName',
@@ -113,7 +125,9 @@ async function prepareTemplate(
 
   // In dev mode we will use the local template
   if (devMode) {
-    execSync(`mkdir -p ${targetDir} && cp -r ../template ${targetDir}`);
+    execSync(
+      `mkdir -p ${targetDir} && cp -r ${__dirname}/../template ${targetDir}`
+    );
     return;
   }
 
