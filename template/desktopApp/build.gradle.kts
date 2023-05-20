@@ -23,7 +23,7 @@ compose.desktop {
 
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "{{PACKAGE_NAME}}"
+            packageName = "com.template.app"
             packageVersion = "1.0.0"
         }
     }

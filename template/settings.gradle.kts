@@ -1,4 +1,4 @@
-rootProject.name = "{{APP_NAME}}"
+rootProject.name = "TemplateApp"
 
 include(":androidApp")
 include(":shared")
