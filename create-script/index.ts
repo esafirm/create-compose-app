@@ -26,6 +26,12 @@ interface Config {
 const REPO_NAME = 'create-compose-app';
 const BRANCH = process.argv[3] || 'main';
 
+const ReplacableData = {
+  packageName: 'com.template.app',
+  appName: 'TemplateApp',
+  teamId: 'template_team_id',
+};
+
 /**
  * Entry point for the script
  */
@@ -166,9 +172,9 @@ async function replaceContents(targetDir: string, config: Config) {
       const stat = fs.statSync(file);
       if (stat.isFile()) {
         let content = fs.readFileSync(file, 'utf8');
-        content = content.replaceAll('{{PACKAGE_NAME}}', config.packageName);
-        content = content.replaceAll('{{APP_NAME}}', config.appName);
-        content = content.replaceAll('{{TEAM_ID}}', config.teamId);
+        content = content.replaceAll(ReplacableData.packageName, config.packageName);
+        content = content.replaceAll(ReplacableData.appName, config.appName);
+        content = content.replaceAll(ReplacableData.teamId, config.teamId);
 
         fs.writeFileSync(file, content, 'utf8');
       }
